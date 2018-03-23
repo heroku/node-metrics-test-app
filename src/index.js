@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 5000;
 const Events = new EventEmitter();
 
 // This will block the event loop for ~lengths of time
-async function blockCpuFor(ms) {
+function blockCpuFor(ms) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       console.log(`blocking the event loop for ${ms}ms`);
@@ -23,32 +23,34 @@ async function blockCpuFor(ms) {
   });
 }
 
-async function getNextMetricsEvent() {
+function getNextMetricsEvent() {
   return new Promise((resolve, reject) => Events.once('metrics', resolve));
 }
 
-const server = http.createServer(async (req, res) => {
+const server = http.createServer((req, res) => {
   // wait for the next metrics event
-  await getNextMetricsEvent();
-
-  // block the event loop for bit
-  await blockCpuFor(2000);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-  await blockCpuFor(100);
-
-  // gather the next metrics data which should include these pauses
-  let data = await getNextMetricsEvent();
-
-  res.setHeader('Content-Type', 'application/json');
-  res.end(data);
+  getNextMetricsEvent()
+    .then(blockCpuFor(2000))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    .then(blockCpuFor(100))
+    // gather the next metrics data which should include these pauses
+    .then(getNextMetricsEvent())
+    .then(data => {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(data); 
+    })
+    .error(() => {
+      res.statusCode = 500;
+      res.end("Something went wrong"); 
+    });
 });
 
 server.listen(PORT, () => console.log(`Listening on ${PORT}`));
