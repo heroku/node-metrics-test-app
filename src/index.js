@@ -47,7 +47,7 @@ const server = http.createServer((req, res) => {
       res.setHeader('Content-Type', 'application/json');
       res.end(data); 
     })
-    .error(() => {
+    .catch(() => {
       res.statusCode = 500;
       res.end("Something went wrong"); 
     });
